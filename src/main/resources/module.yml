@@ -1,0 +1,10 @@
+main: moe.hepta.arcaea.Arcaea
+version: 0.0.1
+name: Arcaea
+id: arcaea
+description: Arcaea查分模块
+defaultEnable: true
+dependencies:
+  - simplegraphics
+authors:
+  - Heptasentium
