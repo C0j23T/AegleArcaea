@@ -205,6 +205,8 @@ public class ArcaeaHelper {
 
     public static String getSongId(String raw, int difficulty) {
         for (var info : Arcaea.instance.songInfo.entrySet()) {
+            if (info.getValue().getDifficulties().size() <= difficulty) continue;
+
             if (info.getKey().equalsIgnoreCase(raw)) return info.getKey();
             if (info.getValue().getDifficulties().get(difficulty).getNameEn().equalsIgnoreCase(raw)) return info.getKey();
             if (info.getValue().getDifficulties().get(difficulty).getNameJp().equalsIgnoreCase(raw)) return info.getKey();
