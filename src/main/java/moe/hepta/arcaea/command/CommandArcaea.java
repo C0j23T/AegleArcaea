@@ -80,6 +80,7 @@ public class CommandArcaea implements CommandExecutor {
                         int userCode = object.get("content").getAsJsonObject().get("account_info").getAsJsonObject().get("code").getAsInt();
                         Arcaea.instance.userAccount.put(commandMessage.getSender().senderID(), userCode);
                         commandMessage.getOperator().sendMessage(commandMessage, "绑定成功：" + object.get("content").getAsJsonObject().get("account_info").getAsJsonObject().get("name").getAsString() + "(" + userCode + ")", false, Arcaea.instance);
+                        Arcaea.instance.saveAccount();
                     } else {
                         commandMessage.getOperator().sendMessage(commandMessage, "发生错误：" + processCode(object.get("status").getAsShort()), false, Arcaea.instance);
                         return null;
@@ -96,6 +97,7 @@ public class CommandArcaea implements CommandExecutor {
                 }
                 Arcaea.instance.userAccount.remove(commandMessage.getSender().senderID());
                 commandMessage.getOperator().sendMessage(commandMessage, "账户解绑成功", false, Arcaea.instance);
+                Arcaea.instance.saveAccount();
             }
             case "quality" -> {
                 if (commandMessage.getSender().senderPermission().compareTo(Permission.MANAGER) < 0) return null;
@@ -160,9 +162,8 @@ public class CommandArcaea implements CommandExecutor {
                     Arcaea.instance.songInfo = new HashMap<>();
                     for (var info : rawSongInfo.getContent().getSongs()) {
                         Arcaea.instance.songInfo.put(info.getSongId(), info);
-                        Set<String> addAliases = new HashSet<>();
-                        addAliases.addAll(info.getAlias());
-                        addAliases.addAll(aliases.get(info.getSongId()));
+                        Set<String> addAliases = new HashSet<>(info.getAlias());
+                        if (aliases.containsKey(info.getSongId())) addAliases.addAll(aliases.get(info.getSongId()));
                         Arcaea.instance.songInfo.get(info.getSongId()).setAlias(new ArrayList<>(addAliases));
                     }
                     if (Arcaea.instance.saveSongInfo()) {

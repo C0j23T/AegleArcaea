@@ -5,7 +5,6 @@ import moe.aegle.command.CommandManager;
 import moe.aegle.command.beans.CommandObject;
 import moe.aegle.command.enums.Permission;
 import moe.aegle.module.Module;
-import moe.aegle.scheduler.ScheduleManager;
 import moe.hepta.arcaea.beans.RawSongList;
 import moe.hepta.arcaea.utils.AUAAccessor;
 import moe.hepta.arcaea.command.CommandArcaea;
@@ -32,15 +31,7 @@ public class Arcaea extends Module {
     @Override
     public void onDisable() {
         logger.info("正在关闭Arcaea查分模块");
-        try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(userAccountFile))) {
-            output.writeObject(userAccount);
-            saveSongInfo();
-            logger.info("用户信息已保存");
-        } catch (FileNotFoundException e) {
-            logger.error("Cannot save user account file", e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        saveAccount();
     }
 
     @Override
@@ -112,17 +103,6 @@ public class Arcaea extends Module {
                 throw new RuntimeException(e);
             }
         }
-        ScheduleManager.getInstance().runTaskTimerAsynchronously(instance, () -> {
-            try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(userAccountFile))) {
-                output.writeObject(userAccount);
-                saveSongInfo();
-                logger.info("用户信息已自动保存");
-            } catch (FileNotFoundException e) {
-                logger.error("Cannot save user account file", e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, 60000, 60000);
         if (userAccountFile.exists() && !userAccountFile.isDirectory() && userAccountFile.length() != 0) {
             try {
                 boolean ignored = userAccountFile.createNewFile();
@@ -159,5 +139,16 @@ public class Arcaea extends Module {
             throw new RuntimeException(e);
         }
         return false;
+    }
+
+    public void saveAccount() {
+        try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(userAccountFile))) {
+            output.writeObject(userAccount);
+            logger.info("用户信息已保存");
+        } catch (FileNotFoundException e) {
+            logger.error("Cannot save user account file", e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
