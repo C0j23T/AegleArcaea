@@ -4,11 +4,15 @@ import com.google.gson.annotations.SerializedName;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 @NoArgsConstructor
 @Data
-public class RawSongList {
+public class RawSongList implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 114514L;
 
     @SerializedName("status")
     private Integer status;
@@ -17,13 +21,19 @@ public class RawSongList {
 
     @NoArgsConstructor
     @Data
-    public static class ContentDTO {
+    public static class ContentDTO implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 114516L;
+
         @SerializedName("songs")
         private List<SongsDTO> songs;
 
         @NoArgsConstructor
         @Data
-        public static class SongsDTO {
+        public static class SongsDTO implements Serializable {
+            @Serial
+            private static final long serialVersionUID = 114517L;
+
             @SerializedName("song_id")
             private String songId;
             @SerializedName("difficulties")
@@ -33,7 +43,10 @@ public class RawSongList {
 
             @NoArgsConstructor
             @Data
-            public static class DifficultiesDTO {
+            public static class DifficultiesDTO implements Serializable {
+                @Serial
+                private static final long serialVersionUID = 114518L;
+
                 @SerializedName("name_en")
                 private String nameEn;
                 @SerializedName("name_jp")
