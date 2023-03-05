@@ -11,27 +11,30 @@ import moe.hepta.arcaea.beans.RawSongList;
 import moe.hepta.arcaea.beans.UserInfo;
 import moe.hepta.arcaea.generator.B30Generator;
 import moe.hepta.arcaea.generator.RecentGenerator;
+import moe.hepta.arcaea.generator.SongInfoGenerator;
 import moe.hepta.arcaea.utils.AUAAccessor;
 import moe.hepta.arcaea.utils.ArcaeaHelper;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class CommandArcaea implements CommandExecutor {
     private static final String helpMessage = """
-                ----闊靛緥婧愮偣 指令帮助----
-                arcaea bind <用户名或用户代码> - 绑定一个闊靛緥婧愮偣账户
-                arcaea unbind - 解除闊靛緥婧愮偣绑定
-                arcaea - 查询最近一次游玩成绩
-                arcaea info <歌名:可选> - 查询账户最近一次游玩或曲目最佳成绩
-                arcaea b30 - 查询账户b30
-                arcaea alias <歌名> - 查询曲目别名
-                arcaea chart <歌名> <难度> - 查看曲目谱面预览
-                arcaea update - 更新曲目列表
-                添加别名请联系Bot所有者""";
+            ----闊靛緥婧愮偣 指令帮助----
+            arcaea bind <用户名或用户代码> - 绑定一个闊靛緥婧愮偣账户
+            arcaea unbind - 解除闊靛緥婧愮偣绑定
+            arcaea - 查询最近一次游玩成绩
+            arcaea info <歌名:可选> - 查询账户最近一次游玩或曲目最佳成绩
+            arcaea b30 - 查询账户b30
+            arcaea alias <歌名> - 查询曲目别名
+            arcaea chart <歌名> <难度> - 查看曲目谱面预览
+            arcaea sinfo <歌名> - 查询曲目信息
+            arcaea update - 更新曲目列表
+            添加别名请联系Bot所有者""";
+    public static boolean updating = false;
 
     @Override
     public String onCommand(CommandMessage commandMessage) {
@@ -134,7 +137,8 @@ public class CommandArcaea implements CommandExecutor {
                     params.put("user", String.valueOf(Arcaea.instance.userAccount.get(commandMessage.getSender().senderID())));
                     params.put("overflow", "3");
                     commandMessage.getOperator().sendMessage(commandMessage, "Bests请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
-                    String rawJson = AUAAccessor.requestStringWithParams("user/best30", params);var b30 = Arcaea.gson.fromJson(rawJson, B30Bean.class);
+                    String rawJson = AUAAccessor.requestStringWithParams("user/best30", params);
+                    var b30 = Arcaea.gson.fromJson(rawJson, B30Bean.class);
                     if (b30 == null) {
                         commandMessage.getOperator().sendMessage(commandMessage, "获取失败，请稍后重试", false, Arcaea.instance);
                         return null;
@@ -153,27 +157,39 @@ public class CommandArcaea implements CommandExecutor {
             case "update" -> {
                 if (commandMessage.getSender().senderPermission().compareTo(Permission.MANAGER) <= 0) return null;
                 try {
+                    updating = true;
                     String jsonSongInfo = AUAAccessor.requestString("song/list");
                     var rawSongInfo = Arcaea.gson.fromJson(jsonSongInfo, RawSongList.class);
                     Map<String, List<String>> aliases = new HashMap<>();
                     for (var info : Arcaea.instance.songInfo.entrySet()) {
                         aliases.put(info.getKey(), info.getValue().getAlias());
                     }
+                    int prevSongs = Arcaea.instance.songInfo.size();
                     Arcaea.instance.songInfo = new HashMap<>();
                     for (var info : rawSongInfo.getContent().getSongs()) {
                         Arcaea.instance.songInfo.put(info.getSongId(), info);
                         Set<String> addAliases = new HashSet<>(info.getAlias());
                         if (aliases.containsKey(info.getSongId())) addAliases.addAll(aliases.get(info.getSongId()));
+                        if (info.getDifficulties().size() > 3 && !info.getDifficulties().get(0).getNameEn().equals(info.getDifficulties().get(3).getNameEn())) {
+                            addAliases.add(info.getDifficulties().get(3).getNameEn());
+                            String tmp = info.getDifficulties().get(3).getNameJp();
+                            if (!tmp.trim().isEmpty()) addAliases.add(tmp);
+                        }
                         Arcaea.instance.songInfo.get(info.getSongId()).setAlias(new ArrayList<>(addAliases));
                     }
+                    String download = "";
+                    if (Arcaea.instance.songInfo.size() != prevSongs) download = "，开始下载游戏资源";
                     if (Arcaea.instance.saveSongInfo()) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "曲目列表更新成功", false, Arcaea.instance);
-                        Arcaea.instance.logger.info("曲目文件获取成功");
+                        commandMessage.getOperator().sendMessage(commandMessage, "曲目列表更新成功" + download, false, Arcaea.instance);
                     }
+                    if (Arcaea.instance.songInfo.size() == prevSongs) return null;
+                    Arcaea.instance.updateGameResources();
+                    commandMessage.getOperator().sendMessage(commandMessage, "更新成功，各功能均可正常使用了", false, Arcaea.instance);
                 } catch (Exception e) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "曲目列表更新失败", false, Arcaea.instance);
-                    Arcaea.instance.logger.error("在获取曲目信息时发生错误（有可能是因为HTTP状态码不为200导致的）", e);
+                    commandMessage.getOperator().sendMessage(commandMessage, "更新失败：" + e, false, Arcaea.instance);
+                    Arcaea.instance.logger.error("在更新时发生错误", e);
                 }
+                updating = false;
             }
             case "info" -> {
                 if (!Arcaea.instance.userAccount.containsKey(commandMessage.getSender().senderID())) {
@@ -271,7 +287,7 @@ public class CommandArcaea implements CommandExecutor {
                     commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
                     return null;
                 }
-                int page = (commandMessage.getArgs().length == 4 &&StringUtils.isNumeric(commandMessage.getArgs()[3])) ? Integer.parseInt(commandMessage.getArgs()[3]) : 0;
+                int page = (commandMessage.getArgs().length == 4 && StringUtils.isNumeric(commandMessage.getArgs()[3])) ? Integer.parseInt(commandMessage.getArgs()[3]) : 0;
                 int listStart = page * 10, listEnd = (page + 1) * 10 - 1;
                 StringBuilder sb = new StringBuilder(ArcaeaHelper.songName(songId, 0));
                 sb.append(" 的别名有：\n");
@@ -288,6 +304,25 @@ public class CommandArcaea implements CommandExecutor {
                         .append(commandMessage.getArgs()[2])
                         .append("\" <页数> 跳转到目标页数");
                 commandMessage.getOperator().sendMessage(commandMessage, sb.toString(), false, Arcaea.instance);
+            }
+            case "sinfo" -> {
+                if (updating) return null;
+                if (commandMessage.getArgs().length < 3) {
+                    commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea sinfo <歌名>", false, Arcaea.instance);
+                    return null;
+                }
+                String songId = ArcaeaHelper.getSongId(commandMessage.getArgs()[2], 0);
+                if (songId.equals("-1")) {
+                    commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
+                    return null;
+                }
+                try {
+                    byte[] output = SongInfoGenerator.generate(Arcaea.instance.songInfo.get(songId));
+                    commandMessage.getOperator().sendMessage(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
+                } catch (IOException e) {
+                    commandMessage.getOperator().sendMessage(commandMessage, "无法获取songInfo，这可能是内部错误，请告诉管理员", false, Arcaea.instance);
+                    Arcaea.instance.logger.error("Could not generate recent", e);
+                }
             }
             default -> {
                 commandMessage.getOperator().sendMessage(commandMessage, helpMessage, false, Arcaea.instance);

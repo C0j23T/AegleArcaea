@@ -5,16 +5,21 @@ import moe.aegle.command.CommandManager;
 import moe.aegle.command.beans.CommandObject;
 import moe.aegle.command.enums.Permission;
 import moe.aegle.module.Module;
+import moe.aegle.scheduler.ScheduleManager;
 import moe.hepta.arcaea.beans.RawSongList;
-import moe.hepta.arcaea.utils.AUAAccessor;
 import moe.hepta.arcaea.command.CommandArcaea;
+import moe.hepta.arcaea.generator.SongInfoGenerator;
+import moe.hepta.arcaea.utils.AUAAccessor;
+import moe.hepta.arcaea.utils.ArcaeaHelper;
 import org.slf4j.Logger;
 
 import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 public class Arcaea extends Module {
     public static Arcaea instance;
@@ -90,6 +95,13 @@ public class Arcaea extends Module {
                     songInfo.put(info.getSongId(), info);
                 }
                 if (saveSongInfo()) logger.info("曲目文件获取成功");
+                ScheduleManager.getInstance().runTaskLaterAsynchronously(this, () -> {
+                    logger.info("开始获取游戏资源");
+                    CommandArcaea.updating = true;
+                    updateGameResources();
+                    logger.info("获取完成");
+                    CommandArcaea.updating = false;
+                }, 0);
             } catch (Exception e) {
                 logger.error("在获取曲目信息时发生错误（有可能是因为HTTP状态码不为200导致的）", e);
             }
@@ -127,6 +139,18 @@ public class Arcaea extends Module {
                 new String[]{"arc", "a"}
         ), this);
         logger.info("Arcaea模块已加载");
+        File[] songInfos = ArcaeaHelper.mkdir("resources", "songInfo").listFiles();
+        if (songInfos == null || songInfos.length < songInfo.size()) {
+            ScheduleManager.getInstance().runTaskLaterAsynchronously(this, () -> {
+                for (var songId : songInfo.keySet()) {
+                    try {
+                        SongInfoGenerator.generate(songInfo.get(songId));
+                    } catch (IOException e) {
+                        logger.error("Cannot generate songInfo for " + songId, e);
+                    }
+                }
+            }, 0);
+        }
     }
 
     public boolean saveSongInfo() {
@@ -150,5 +174,49 @@ public class Arcaea extends Module {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void updateGameResources(){
+        Set<String> songBg = new HashSet<>();
+        for (var info : songInfo.values()) {
+            for (var tmp : info.getDifficulties()) songBg.add(tmp.getBg());
+        }
+        File gameApk = new File(Arcaea.instance.getDataFolder(), "/temp.apk");
+        try {
+            URL url = new URL("https://dl.arcaea.moe");
+            URLConnection conn = url.openConnection();
+            InputStream inputStream = conn.getInputStream();
+            FileOutputStream fos = new FileOutputStream(gameApk);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+            fos.close();
+            inputStream.close();
+            ZipFile zipIn = new ZipFile(gameApk);
+            buffer = new byte[1024];
+
+            @SuppressWarnings("unchecked")
+            Enumeration<ZipEntry> e = (Enumeration<ZipEntry>) zipIn.entries();
+            while (e.hasMoreElements()) {
+                var entry = e.nextElement();
+                if (entry.isDirectory()) continue;
+                if (!entry.getName().startsWith("assets/img/bg/")) continue;
+                if (!songBg.contains(entry.getName().substring(14, entry.getName().length() - 4))) continue;
+                BufferedInputStream bis = new BufferedInputStream(zipIn.getInputStream(entry));
+                File f = new File(ArcaeaHelper.mkdir("resources", "songBg") + entry.getName().substring(entry.getName().lastIndexOf("/")));
+                if (!f.exists()) {
+                    boolean ignored = f.createNewFile();
+                }
+                fos = new FileOutputStream(f);
+                while ((len = bis.read(buffer)) != -1) fos.write(buffer, 0, len);
+                fos.close();
+                bis.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        boolean ignored = gameApk.delete();
     }
 }

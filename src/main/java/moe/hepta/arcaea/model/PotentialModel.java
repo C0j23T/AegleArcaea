@@ -24,7 +24,7 @@ public class PotentialModel implements IGraphicsModel {
     @Override
     public void draw(Graphics2D g) {
         Panel temp = new Panel(200, 200);
-        temp.draw(new IGraphicsModel[]{new ImageModel(ArcaeaHelper.rating(potential), 21, 21, 158)});
+        temp.draw(new IGraphicsModel[]{new ImageModel(ArcaeaHelper.ratingImage(potential), 21, 21, 158)});
         if (potential < 0)
             temp.draw(new IGraphicsModel[]{new TextWithStrokeModel("--", Resources.Exo54, Color.WHITE, 76, 116, new Color(31, 30, 51), 8)});
         else {

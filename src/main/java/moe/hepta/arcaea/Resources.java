@@ -17,10 +17,10 @@ import java.util.Map;
 
 public class Resources {
     public static BufferedImage[] difficultyTags, grade, rating, recentTemplates = new BufferedImage[23];
-    public static BufferedImage b30Template, recentTemplate, b30piece;
+    public static BufferedImage b30Template, recentTemplate, b30piece, songInfoBg, songInfoTemplate, songInfoBydBg;
     public static Font Exo54, Exo48, Exo38, Exo24, Exo26,
             GeoSansLight96, GeoSansLight55, GeoSansLight40, GeoSansLight34Compact, GeoSansLight34, GeoSansLight73, GeoSansLight65,
-            SourceHanCJK46, SourceHanCJK64, SourceHanCJK96;
+            SourceHanCJK46, SourceHanCJK64, SourceHanCJK96, SourceHanCJK48, SourceHanCJK36;
 
     public static void init() {
         try {
@@ -57,6 +57,9 @@ public class Resources {
             b30Template = ImageIO.read(Arcaea.instance.getResource("b30_template.png"));
             b30piece = ImageIO.read(Arcaea.instance.getResource("b30_piece1.png"));
             recentTemplate = ImageIO.read(Arcaea.instance.getResource("recent_template.png"));
+            songInfoBg = ImageIO.read(Arcaea.instance.getResource("songInfo/bg_small.png"));
+            songInfoTemplate = ImageIO.read(Arcaea.instance.getResource("songInfo_template.png"));
+            songInfoBydBg = ImageIO.read(Arcaea.instance.getResource("songInfo/byd.png"));
             Arcaea.instance.logger.info("Reading fonts");
             Map<TextAttribute, Object> attributes = new HashMap<>();
             attributes.put(TextAttribute.KERNING, TextAttribute.KERNING_ON);
@@ -74,6 +77,8 @@ public class Resources {
             GeoSansLight40 = loadFont(Arcaea.instance.getResource("fonts/GeosansLight.ttf"), 40).deriveFont(attributes);
             SourceHanCJK46 = loadFont(Arcaea.instance.getResource("fonts/SourceHanSansSC-Light-2.otf"), 46).deriveFont(attributes);
             SourceHanCJK96 = loadFont(Arcaea.instance.getResource("fonts/SourceHanSansSC-Light-2.otf"), 96);
+            SourceHanCJK48 = loadFont(Arcaea.instance.getResource("fonts/SourceHanSansSC-Light-2.otf"), 48);
+            SourceHanCJK36 = loadFont(Arcaea.instance.getResource("fonts/SourceHanSansSC-Light-2.otf"), 36);
             SourceHanCJK64 = loadFont(Arcaea.instance.getResource("fonts/SourceHanSansSC-Light-2.otf"), 64).deriveFont(attributes);
             getRecentTemplates();
         } catch (Exception e) {

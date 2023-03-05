@@ -32,7 +32,7 @@ public class ArcaeaHelper {
         }
         return directory;
     }
-    public static BufferedImage rating(short potential) {
+    public static BufferedImage ratingImage(short potential) {
         short image = 8;
         if (potential >= 0) image = 0;
         if (potential >= 350) image = 1;
@@ -83,6 +83,7 @@ public class ArcaeaHelper {
     }
 
     public static BufferedImage songImage(String songId, int difficulty) throws IOException {
+        if (songId.equals("lasteternity")) difficulty = 3;
         File f = new File(mkdir("resources", "song"), File.separator + songId + "_" + difficulty + ".png");
         if (!f.exists()) {
             Arcaea.instance.logger.warn("The song image was not found, downloading");
@@ -104,6 +105,25 @@ public class ArcaeaHelper {
         return Arcaea.instance.songInfo.get(songId).getDifficulties().size() >= difficulty + 1;
     }
 
+    public static BufferedImage getSongBG(String songId, int difficulty) {
+        String bgFileName = Arcaea.instance.songInfo.get(songId).getDifficulties().get(difficulty).getBg() + ".jpg";
+        if (".jpg".equals(bgFileName)) {
+            int side = Arcaea.instance.songInfo.get(songId).getDifficulties().get(difficulty).getSide();
+            if (side == 0) bgFileName = "single_light.jpg";
+            else bgFileName = "single_conflict.jpg";
+        }
+        File bgFile = new File(mkdir("resources", "songBg"), File.separator + bgFileName);
+        if (!bgFile.exists()) {
+            Arcaea.instance.logger.error("没有对应的背景文件，请执行*a update");
+            return new BufferedImage(0, 0, BufferedImage.TYPE_INT_ARGB);
+        }
+        try {
+            return ImageIO.read(bgFile);
+        } catch (IOException e) {
+            Arcaea.instance.logger.error("", e);
+        }
+        return new BufferedImage(0, 0, BufferedImage.TYPE_INT_ARGB);
+    }
     public static byte[] getChartPreview(String songId, String difficulty) {
         File f = new File(mkdir("resources", "preview"), File.separator + songId + "_" + difficulty + ".png");
         if (!f.exists()) {
@@ -188,6 +208,11 @@ public class ArcaeaHelper {
             } else break;
         }
         return result;
+    }
+
+    public static int textWidth(String src,  Font font, Panel panel) {
+        FontMetrics fm = panel.GraphicsFromBackGround().getFontMetrics(font);
+        return fm.stringWidth(src);
     }
 
     private static final List<String> beyond = List.of("beyond", "byd", "byn", "3"),
