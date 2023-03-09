@@ -165,7 +165,7 @@ public class Arcaea extends Module {
         return false;
     }
 
-    public void saveAccount() {
+    public synchronized void saveAccount() {
         try (ObjectOutputStream output = new ObjectOutputStream(new FileOutputStream(userAccountFile))) {
             output.writeObject(userAccount);
             logger.info("用户信息已保存");
@@ -176,7 +176,7 @@ public class Arcaea extends Module {
         }
     }
 
-    public void updateGameResources(){
+    public void updateGameResources() {
         Set<String> songBg = new HashSet<>();
         for (var info : songInfo.values()) {
             for (var tmp : info.getDifficulties()) songBg.add(tmp.getBg());
@@ -204,11 +204,10 @@ public class Arcaea extends Module {
                 if (entry.isDirectory()) continue;
                 if (!entry.getName().startsWith("assets/img/bg/")) continue;
                 if (!songBg.contains(entry.getName().substring(14, entry.getName().length() - 4))) continue;
-                BufferedInputStream bis = new BufferedInputStream(zipIn.getInputStream(entry));
                 File f = new File(ArcaeaHelper.mkdir("resources", "songBg") + entry.getName().substring(entry.getName().lastIndexOf("/")));
-                if (!f.exists()) {
-                    boolean ignored = f.createNewFile();
-                }
+                if (f.exists()) continue;
+                boolean ignored = f.createNewFile();
+                BufferedInputStream bis = new BufferedInputStream(zipIn.getInputStream(entry));
                 fos = new FileOutputStream(f);
                 while ((len = bis.read(buffer)) != -1) fos.write(buffer, 0, len);
                 fos.close();
