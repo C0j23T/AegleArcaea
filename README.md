@@ -1,4 +1,4 @@
-*# ArcaeaMod
+# ArcaeaMod
 _Project Aegle基于ArcaeaUnlimitedAPI实现的Arcaea查分模块_  
 因为兴趣使然随便写的查分器（笑）
 ## 注意：该项目已停止开发
