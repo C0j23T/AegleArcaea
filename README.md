@@ -19,16 +19,19 @@ _Project Aegle基于ArcaeaUnlimitedAPI实现的Arcaea查分模块_
 [浩子的设计稿](https://s1.ax1x.com/2023/04/28/p9QXpQI.md.png)
 #### 2023-02-10: Make B30 Great Again
 在浩子鸽了几天之后，新的b30设计总算是有了，通宵一晚上，新的 `b30` 顺利出产，新的ArcaeaMod即刻被投入使用。  
+在这之后的几天，其他功能也陆续完成重置。  
 [b30实装](https://s1.ax1x.com/2023/04/28/p9QXFw8.md.jpg)
 #### 2023-03-21: 链式反应
 Project Aegle的命令特点之一就是命令链，而ArcaeaMod也支持了这个。至此，ArcaeaMod的开发就告一段落，开始降低开发速度。  
 [链式反应](https://s1.ax1x.com/2023/04/28/p9QXkTS.md.jpg)
 #### 2023-04-27: 终焉？
-随着Arcaea Online的推出和AUA的停止服务，ArcaeaMod也将迎来落幕。
+随着Arcaea Online的推出和AUA的停止服务，ArcaeaMod也将迎来落幕。  
+目前ArcaeaMod已经开源。
 ## 其他
 虽然ArcaeaMod停止了开发，但Project Aegle不会停下他的脚步；即使服务器提供商停止运营，Aegle的开发也不会停止。期待在未来的某一天，Project Aegle能够带着丰富的功能，再次回到人们的视野，作为一个Bot尽全力为用户提供服务。
 ## 特别感谢
 - [Arcaea-Infinity](https://github.com/Arcaea-Infinity) - AUA的维护者们，一直都在默默奉献却不常被人提及
+- [Andreal](https://github.com/Awbugl/Andreal) - ArcaeaMod的设计参考了Andreal
 - [go-cqhttp](https://github.com/Mrs4s/go-cqhttp) - 轻量的QQBot开发库
 - [Pixso](https://pixso.cn) - 好用的UI设计工具，ArcaeaMod的所有UI均使用它来设计
 - [Jetbrains Intellij IDEA](https://www.jetbrains.com/zh-cn/idea) - 功能强大的Java IDE
