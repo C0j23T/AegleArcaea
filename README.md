@@ -1,4 +1,4 @@
-# ArcaeaMod
+*# ArcaeaMod
 _Project Aegle基于ArcaeaUnlimitedAPI实现的Arcaea查分模块_  
 因为兴趣使然随便写的查分器（笑）
 ## 注意：该项目已停止开发
@@ -9,7 +9,7 @@ _Project Aegle基于ArcaeaUnlimitedAPI实现的Arcaea查分模块_
 #### 2022-09-07: 正式编写
 在几天前找aw要到了api后，终于新建文件夹（bushi）  
 这时候还完全不知道查分bot该怎么写，于是在阅读Andreal代码后把Andreal的C#代码转译成了Java，并先后完成了 `b40`  `b30`  `info recent`  `info best` 等功能
-### 2022-10-14: AegleBot - Arcaea模块
+#### 2022-10-14: AegleBot - Arcaea模块
 自制的查分器在经过断断续续的开发后终于进入了实际的使用环境中，成为了AegleBot的一部分，虽然没多少人用，但感觉很开心  。
   
  ~~UI直接照搬的Andreal所以截图自己脑补罢（~~ 
