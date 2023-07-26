@@ -132,9 +132,9 @@ public class Arcaea extends Module {
                 Permission.MEMBER,
                 new CommandArcaea(),
                 false,
+                true,
                 false,
-                false,
-                false,
+                true,
                 "Arcaea模块主要命令",
                 new String[]{"arc", "a"}
         ), this);
@@ -144,7 +144,7 @@ public class Arcaea extends Module {
             ScheduleManager.getInstance().runTaskLaterAsynchronously(this, () -> {
                 for (var songId : songInfo.keySet()) {
                     try {
-                        SongInfoGenerator.generate(songInfo.get(songId));
+                        SongInfoGenerator.generate(songInfo.get(songId), false);
                     } catch (IOException e) {
                         logger.error("Cannot generate songInfo for " + songId, e);
                     }

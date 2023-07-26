@@ -18,7 +18,7 @@
         <dependency>
             <groupId>heptasentium.aegle</groupId>
             <artifactId>aegle</artifactId>
-            <version>1.0-ALPHA</version>
+            <version>1.1-ALPHA</version>
         </dependency>
     </dependencies>
 

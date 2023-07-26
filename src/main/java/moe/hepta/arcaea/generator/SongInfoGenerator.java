@@ -16,10 +16,13 @@ import java.awt.*;
 import java.io.*;
 
 public class SongInfoGenerator {
-    public static byte[] generate(RawSongList.ContentDTO.SongsDTO song) throws IOException {
+    public static byte[] generate(RawSongList.ContentDTO.SongsDTO song, boolean recreate) throws IOException {
         File file = new File(ArcaeaHelper.mkdir("resources", "songInfo"), song.getSongId() + ".jpg");
-        if (file.exists()) {
+        if (file.exists() && !recreate) {
             return IOUtils.toByteArray(new FileInputStream(file));
+        }
+        if (recreate) {
+            boolean ignore = file.delete();
         }
         Arcaea.instance.logger.info("Generating songInfo for " + song.getSongId());
         long start = System.currentTimeMillis();
@@ -40,32 +43,61 @@ public class SongInfoGenerator {
         tmp = new String(song.getDifficulties().get(0).getNameEn().getBytes()).toUpperCase();
         tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(tmp), 831, Resources.SourceHanCJK64, panel);
         panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK64, Color.WHITE, 875 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK64, panel), 911));
-        tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(song.getDifficulties().get(0).getArtist()), 410, Resources.SourceHanCJK48, panel);
+
+        tmp = song.getDifficulties().get(0).getArtist();
+        if (tmp == null || tmp.length() == 0) for (RawSongList.ContentDTO.SongsDTO.DifficultiesDTO diff : song.getDifficulties()) {
+            if (diff.getArtist() != null && diff.getArtist().length() > 0) {
+                tmp = diff.getArtist();
+                break;
+            }
+        }
+        tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(tmp), 410, Resources.SourceHanCJK48, panel);
         panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK48, Color.WHITE, 875 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK48, panel), 1025));
-        tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(song.getDifficulties().get(0).getJacketDesigner()), 410, Resources.SourceHanCJK48, panel);
+
+        tmp = song.getDifficulties().get(0).getJacketDesigner();
+        if (tmp == null || tmp.length() == 0) for (RawSongList.ContentDTO.SongsDTO.DifficultiesDTO diff : song.getDifficulties()) {
+            if (diff.getJacketDesigner() != null && diff.getJacketDesigner().length() > 0) {
+                tmp = diff.getJacketDesigner();
+                break;
+            }
+        }
+        tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(tmp), 410, Resources.SourceHanCJK48, panel);
         panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK48, Color.WHITE, 875 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK48, panel), 1110));
-        tmp = String.valueOf(song.getDifficulties().get(0).getTime()) + 's';
+
+        if (song.getDifficulties().get(0).getTime() == 0) for (RawSongList.ContentDTO.SongsDTO.DifficultiesDTO diff : song.getDifficulties()) {
+            if (diff.getTime() != null && diff.getTime() > 0) {
+                tmp = String.valueOf(diff.getTime());
+                break;
+            }
+        } else tmp = String.valueOf(song.getDifficulties().get(0).getTime());
+        tmp = tmp + 's';
         panel.draw(new TextOnlyModel(tmp, Resources.SourceHanCJK48, Color.WHITE, 875 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK48, panel), 1200));
 
         panel.draw(new TextOnlyModel("Past " + song.getDifficulties().get(0).getRating() / 10.0f, Resources.GeoSansLight65, Color.WHITE, 1580, 448));
         tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(song.getDifficulties().get(0).getChartDesigner()), 400, Resources.SourceHanCJK36, panel);
         panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK36, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK36, panel), 533));
         panel.draw(new TextOnlyModel("Notes: " + song.getDifficulties().get(0).getNote(), Resources.Exo38, Color.WHITE, 1500, 606));
-        tmp = "MaxPTT: " + (song.getDifficulties().get(0).getRating() / 10.0f + 2);
+        float maxRating = song.getDifficulties().get(0).getRating() / 10.0f + 2;
+        maxRating = ((int) maxRating) == 2 ? 0.0f : maxRating;
+        tmp = "MaxPTT: " + maxRating;
         panel.draw(new TextOnlyModel(tmp, Resources.Exo38, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.Exo38, panel), 606));
 
         panel.draw(new TextOnlyModel("Present " + song.getDifficulties().get(1).getRating() / 10.0f, Resources.GeoSansLight65, Color.WHITE, 1580, 672));
         tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(song.getDifficulties().get(1).getChartDesigner()), 400, Resources.SourceHanCJK36, panel);
         panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK36, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK36, panel), 774));
         panel.draw(new TextOnlyModel("Notes: " + song.getDifficulties().get(1).getNote(), Resources.Exo38, Color.WHITE, 1500, 828));
-        tmp = "MaxPTT: " + (song.getDifficulties().get(1).getRating() / 10.0f + 2);
+        maxRating = song.getDifficulties().get(1).getRating() / 10.0f + 2;
+        maxRating = ((int) maxRating) == 2 ? 0.0f : maxRating;
+        tmp = "MaxPTT: " + maxRating;
         panel.draw(new TextOnlyModel(tmp, Resources.Exo38, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.Exo38, panel), 828));
 
         panel.draw(new TextOnlyModel("Future " + song.getDifficulties().get(2).getRating() / 10.0f, Resources.GeoSansLight65, Color.WHITE, 1580, 892));
         tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(song.getDifficulties().get(2).getChartDesigner()), 400, Resources.SourceHanCJK36, panel);
         panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK36, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK36, panel), 985));
         panel.draw(new TextOnlyModel("Notes: " + song.getDifficulties().get(2).getNote(), Resources.Exo38, Color.WHITE, 1500, 1050));
-        tmp = "MaxPTT: " + (song.getDifficulties().get(2).getRating() / 10.0f + 2);
+        maxRating = song.getDifficulties().get(2).getRating() / 10.0f + 2;
+        maxRating = ((int) maxRating) == 2 ? 0.0f : maxRating;
+        tmp = "MaxPTT: " + maxRating;
         panel.draw(new TextOnlyModel(tmp, Resources.Exo38, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.Exo38, panel), 1050));
 
         if (song.getDifficulties().size() > 3) {
@@ -74,7 +106,9 @@ public class SongInfoGenerator {
             tmp = ArcaeaHelper.shortWidth(StringUtils.reverse(song.getDifficulties().get(3).getChartDesigner()), 400, Resources.SourceHanCJK36, panel);
             panel.draw(new TextOnlyModel(StringUtils.reverse(tmp), Resources.SourceHanCJK36, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.SourceHanCJK36, panel), 1203));
             panel.draw(new TextOnlyModel("Notes: " + song.getDifficulties().get(3).getNote(), Resources.Exo38, Color.WHITE, 1500, 1272));
-            tmp = "MaxPTT: " + (song.getDifficulties().get(3).getRating() / 10.0f + 2);
+            maxRating = song.getDifficulties().get(3).getRating() / 10.0f + 2;
+            maxRating = ((int) maxRating) == 2 ? 0.0f : maxRating;
+            tmp = "MaxPTT: " + maxRating;
             panel.draw(new TextOnlyModel(tmp, Resources.Exo38, Color.WHITE, 2076 - ArcaeaHelper.textWidth(tmp, Resources.Exo38, panel), 1272));
         }
         Arcaea.instance.logger.info("Generation complete, took {} ms", System.currentTimeMillis() - start);

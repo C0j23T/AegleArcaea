@@ -199,6 +199,7 @@ public class ArcaeaHelper {
     }
 
     public static String shortWidth(String src, int width, Font font, Panel panel) {
+        if (src == null || src.length() == 0) return "";
         FontMetrics fm = panel.GraphicsFromBackGround().getFontMetrics(font);
         String result = src;
         for (int j = 20; j > 5; j--) {
@@ -211,6 +212,7 @@ public class ArcaeaHelper {
     }
 
     public static int textWidth(String src,  Font font, Panel panel) {
+        if (src == null) return 0;
         FontMetrics fm = panel.GraphicsFromBackGround().getFontMetrics(font);
         return fm.stringWidth(src);
     }

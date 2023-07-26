@@ -39,39 +39,41 @@ public class CommandArcaea implements CommandExecutor {
     @Override
     public String onCommand(CommandMessage commandMessage) {
         if (commandMessage.getArgs().length == 1) {
+            if (commandMessage.isChain()) return null;
             if (!Arcaea.instance.userAccount.containsKey(commandMessage.getSender().senderID())) {
-                commandMessage.getOperator().sendMessage(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
                 return null;
             }
             try {
                 Map<String, String> params = new HashMap<>();
                 params.put("user", String.valueOf(Arcaea.instance.userAccount.get(commandMessage.getSender().senderID())));
-                commandMessage.getOperator().sendMessage(commandMessage, "Recent请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, "Recent请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
                 String rawJson = AUAAccessor.requestStringWithParams("user/info", params);
                 if (rawJson == null) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "获取失败，请稍后重试", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "获取失败，请稍后重试", false, Arcaea.instance);
                 }
                 var userInfo = Arcaea.gson.fromJson(rawJson, UserInfo.class);
                 if (userInfo.getStatus() != 0) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "发生错误：" + processCode(userInfo.getStatus()), false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "发生错误：" + processCode(userInfo.getStatus()), false, Arcaea.instance);
                     return null;
                 }
                 byte[] output = RecentGenerator.generate(userInfo);
-                commandMessage.getOperator().sendMessage(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
             } catch (IOException e) {
-                commandMessage.getOperator().sendMessage(commandMessage, "无法获取recent，可能是服务器超时或是内部错误，请稍后重试", false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, "无法获取recent，可能是服务器超时或是内部错误，请稍后重试", false, Arcaea.instance);
                 Arcaea.instance.logger.error("Could not generate recent", e);
             }
             return null;
         }
         switch (commandMessage.getArgs()[1]) {
             case "bind" -> {
+                if (commandMessage.isChain()) return null;
                 if (commandMessage.getArgs().length != 3) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea bind <用户名称/代码>", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "参数错误，应为arcaea bind <用户名称/代码>", false, Arcaea.instance);
                     return null;
                 }
                 if (Arcaea.instance.userAccount.containsKey(commandMessage.getSender().senderID())) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "你已绑定了一个Arcaea账户", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "你已绑定了一个Arcaea账户", false, Arcaea.instance);
                     return null;
                 }
                 Map<String, String> params = new HashMap<>();
@@ -82,80 +84,83 @@ public class CommandArcaea implements CommandExecutor {
                     if (object.get("status").getAsShort() == 0) {
                         int userCode = object.get("content").getAsJsonObject().get("account_info").getAsJsonObject().get("code").getAsInt();
                         Arcaea.instance.userAccount.put(commandMessage.getSender().senderID(), userCode);
-                        commandMessage.getOperator().sendMessage(commandMessage, "绑定成功：" + object.get("content").getAsJsonObject().get("account_info").getAsJsonObject().get("name").getAsString() + "(" + userCode + ")", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "绑定成功：" + object.get("content").getAsJsonObject().get("account_info").getAsJsonObject().get("name").getAsString() + "(" + userCode + ")", false, Arcaea.instance);
                         Arcaea.instance.saveAccount();
                     } else {
-                        commandMessage.getOperator().sendMessage(commandMessage, "发生错误：" + processCode(object.get("status").getAsShort()), false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "发生错误：" + processCode(object.get("status").getAsShort()), false, Arcaea.instance);
                         return null;
                     }
                 } catch (Exception e) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "阿勒，服务器没有正确回答呢，确认参数正确或者等会再试吧", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "阿勒，服务器没有正确回答呢，确认参数正确或者等会再试吧", false, Arcaea.instance);
                     return null;
                 }
             }
             case "unbind" -> {
+                if (commandMessage.isChain()) return null;
                 if (!Arcaea.instance.userAccount.containsKey(commandMessage.getSender().senderID())) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
                     return null;
                 }
                 Arcaea.instance.userAccount.remove(commandMessage.getSender().senderID());
-                commandMessage.getOperator().sendMessage(commandMessage, "账户解绑成功", false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, "账户解绑成功", false, Arcaea.instance);
                 Arcaea.instance.saveAccount();
             }
             case "quality" -> {
+                if (commandMessage.isChain()) return null;
                 if (commandMessage.getSender().senderPermission().compareTo(Permission.MANAGER) < 0) return null;
                 if (commandMessage.getArgs().length != 3) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea quality <图片质量>\n0 - 全分辨率\n1 - 三分之二分辨率\n2 - 二分之一分辨率", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "参数错误，应为arcaea quality <图片质量>\n0 - 全分辨率\n1 - 三分之二分辨率\n2 - 二分之一分辨率", false, Arcaea.instance);
                     return null;
                 }
                 switch (commandMessage.getArgs()[2]) {
                     case "0" -> {
                         Arcaea.instance.imageQuality = 0;
-                        commandMessage.getOperator().sendMessage(commandMessage, "全局图片分辨率已调整为全分辨率", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "全局图片分辨率已调整为全分辨率", false, Arcaea.instance);
                     }
                     case "1" -> {
                         Arcaea.instance.imageQuality = 1;
-                        commandMessage.getOperator().sendMessage(commandMessage, "全局图片分辨率已调整为三分之二分辨率", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "全局图片分辨率已调整为三分之二分辨率", false, Arcaea.instance);
                     }
                     case "2" -> {
                         Arcaea.instance.imageQuality = 2;
-                        commandMessage.getOperator().sendMessage(commandMessage, "全局图片分辨率已调整为二分之一分辨率", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "全局图片分辨率已调整为二分之一分辨率", false, Arcaea.instance);
                     }
                     default -> {
-                        commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea quality <图片质量>\n0 - 全分辨率\n1 - 三分之二分辨率\n2 - 二分之一分辨率", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "参数错误，应为arcaea quality <图片质量>\n0 - 全分辨率\n1 - 三分之二分辨率\n2 - 二分之一分辨率", false, Arcaea.instance);
                         return null;
                     }
                 }
             }
             case "b30" -> {
+                if (commandMessage.isChain()) return null;
                 if (!Arcaea.instance.userAccount.containsKey(commandMessage.getSender().senderID())) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
                     return null;
                 }
                 try {
                     Map<String, String> params = new HashMap<>();
                     params.put("user", String.valueOf(Arcaea.instance.userAccount.get(commandMessage.getSender().senderID())));
                     params.put("overflow", "3");
-                    commandMessage.getOperator().sendMessage(commandMessage, "Bests请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "Bests请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
                     String rawJson = AUAAccessor.requestStringWithParams("user/best30", params);
                     var b30 = Arcaea.gson.fromJson(rawJson, B30Bean.class);
                     if (b30 == null) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "获取失败，请稍后重试", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "获取失败，请稍后重试", false, Arcaea.instance);
                         return null;
                     }
                     if (b30.getStatus() != 0) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "发生错误：" + processCode(b30.getStatus()), false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "发生错误：" + processCode(b30.getStatus()), false, Arcaea.instance);
                         return null;
                     }
                     byte[] output = B30Generator.generate(b30);
-                    commandMessage.getOperator().sendMessage(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
                 } catch (IOException e) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "无法获取b30，可能是服务器超时或是内部错误，请稍后重试", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "无法获取b30，可能是服务器超时或是内部错误，请稍后重试", false, Arcaea.instance);
                     Arcaea.instance.logger.error("Could not generate b30", e);
                 }
             }
             case "update" -> {
-                if (commandMessage.getSender().senderPermission().compareTo(Permission.MANAGER) <= 0) return null;
+                if (commandMessage.getSender().senderPermission().compareTo(Permission.MANAGER) < 0) return null;
                 try {
                     updating = true;
                     String jsonSongInfo = AUAAccessor.requestString("song/list");
@@ -180,20 +185,24 @@ public class CommandArcaea implements CommandExecutor {
                     String download = "";
                     if (Arcaea.instance.songInfo.size() != prevSongs) download = "，开始下载游戏资源";
                     if (Arcaea.instance.saveSongInfo()) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "曲目列表更新成功" + download, false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "曲目列表更新成功" + download, false, Arcaea.instance);
                     }
-                    if (Arcaea.instance.songInfo.size() == prevSongs) return null;
+                    if (Arcaea.instance.songInfo.size() == prevSongs) {
+                        updating = false;
+                        return null;
+                    }
                     Arcaea.instance.updateGameResources();
-                    commandMessage.getOperator().sendMessage(commandMessage, "更新成功，各功能均可正常使用了", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "更新成功，各功能均可正常使用了", false, Arcaea.instance);
                 } catch (Exception e) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "更新失败：" + e, false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "更新失败：" + e, false, Arcaea.instance);
                     Arcaea.instance.logger.error("在更新时发生错误", e);
                 }
                 updating = false;
             }
             case "info" -> {
+                if (commandMessage.isChain()) return null;
                 if (!Arcaea.instance.userAccount.containsKey(commandMessage.getSender().senderID())) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "你还没有绑定Arcaea账户", false, Arcaea.instance);
                     return null;
                 }
                 try {
@@ -204,87 +213,89 @@ public class CommandArcaea implements CommandExecutor {
                         if (commandMessage.getArgs().length == 4) {
                             difficulty = ArcaeaHelper.difficultyAbbreviationConverter(commandMessage.getArgs()[3]);
                             if (difficulty.equals("-1")) {
-                                commandMessage.getOperator().sendMessage(commandMessage, "没有这种难度呢，换个方式再试试吧", false, Arcaea.instance);
+                                commandMessage.getOperator().sendGroupReply(commandMessage, "没有这种难度呢，换个方式再试试吧", false, Arcaea.instance);
                                 return null;
                             }
                         }
                         String songId = ArcaeaHelper.getSongId(commandMessage.getArgs()[2], Integer.parseInt(difficulty));
                         if (songId.equals("-1")) {
-                            commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
+                            commandMessage.getOperator().sendGroupReply(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
                             return null;
                         }
                         if (!ArcaeaHelper.haveDifficulty(songId, Integer.parseInt(difficulty))) {
-                            commandMessage.getOperator().sendMessage(commandMessage, "这个曲目没有这个难度", false, Arcaea.instance);
+                            commandMessage.getOperator().sendGroupReply(commandMessage, "这个曲目没有这个难度", false, Arcaea.instance);
                             return null;
                         }
                         params.put("difficulty", difficulty);
                         params.put("songid", songId);
                     }
-                    commandMessage.getOperator().sendMessage(commandMessage, "Recent/Best请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "Recent/Best请求已收到，正在查询中，这可能需要点时间...", false, Arcaea.instance);
                     String rawJson = AUAAccessor.requestStringWithParams(commandMessage.getArgs().length == 2 ? "user/info" : "user/best", params);
                     if (rawJson == null) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "获取失败或者尚未游玩该难度的曲目，请稍后重试", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "获取失败或者尚未游玩该难度的曲目，请稍后重试", false, Arcaea.instance);
                     }
                     var userInfo = Arcaea.gson.fromJson(rawJson, UserInfo.class);
                     if (userInfo.getStatus() != 0) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "发生错误：" + processCode(userInfo.getStatus()), false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "发生错误：" + processCode(userInfo.getStatus()), false, Arcaea.instance);
                         return null;
                     }
                     if (userInfo.getContent().getRecord() != null)
                         userInfo.getContent().setRecentScore(List.of(userInfo.getContent().getRecord()));
                     byte[] output = RecentGenerator.generate(userInfo);
-                    commandMessage.getOperator().sendMessage(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
                 } catch (IOException e) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "无法获取recent/best，可能是服务器超时或是内部错误，请稍后重试", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "无法获取recent/best，可能是服务器超时或是内部错误，请稍后重试", false, Arcaea.instance);
                     Arcaea.instance.logger.error("Could not generate recent", e);
                 }
             }
             case "chart" -> {
+                if (commandMessage.isChain()) return null;
                 if (commandMessage.getArgs().length != 4) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea chart <歌名> <难度>", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "参数错误，应为arcaea chart <歌名> <难度>", false, Arcaea.instance);
                 }
                 String difficulty = ArcaeaHelper.difficultyAbbreviationConverter(commandMessage.getArgs()[3]);
                 if (difficulty.equals("-1")) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "没有这种难度呢，换个方式再试试吧", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "没有这种难度呢，换个方式再试试吧", false, Arcaea.instance);
                     return null;
                 }
                 String songId = ArcaeaHelper.getSongId(commandMessage.getArgs()[2], Integer.parseInt(difficulty));
                 if (songId.equals("-1")) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
                     return null;
                 }
                 if (!ArcaeaHelper.haveDifficulty(songId, Integer.parseInt(difficulty))) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "这个曲目没有这个难度", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "这个曲目没有这个难度", false, Arcaea.instance);
                     return null;
                 }
                 byte[] output = ArcaeaHelper.getChartPreview(songId, difficulty);
-                commandMessage.getOperator().sendMessage(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
             }
             case "alias" -> {
+                if (commandMessage.isChain()) return null;
                 if (commandMessage.getArgs().length < 3) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea alias <歌名>", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "参数错误，应为arcaea alias <歌名>", false, Arcaea.instance);
                     return null;
                 }
                 if (commandMessage.getSender().senderPermission().compareTo(Permission.MANAGER) >= 0 && commandMessage.getArgs().length == 5) {
                     String songId = ArcaeaHelper.getSongId(commandMessage.getArgs()[3], 0);
                     if (songId.equals("-1")) {
-                        commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
                         return null;
                     }
                     if (commandMessage.getArgs()[2].equalsIgnoreCase("add")) {
                         var aliases = Arcaea.instance.songInfo.get(songId).getAlias();
                         if (!aliases.contains(commandMessage.getArgs()[4])) aliases.add(commandMessage.getArgs()[4]);
-                        commandMessage.getOperator().sendMessage(commandMessage, String.format("%s 的别名 %s 添加成功", ArcaeaHelper.songName(songId, 0), commandMessage.getArgs()[4]), false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, String.format("%s 的别名 %s 添加成功", ArcaeaHelper.songName(songId, 0), commandMessage.getArgs()[4]), false, Arcaea.instance);
                     }
                     if (commandMessage.getArgs()[2].equalsIgnoreCase("remove")) {
                         Arcaea.instance.songInfo.get(songId).getAlias().removeIf(s -> s.equalsIgnoreCase(commandMessage.getArgs()[4]));
-                        commandMessage.getOperator().sendMessage(commandMessage, "删除成功", false, Arcaea.instance);
+                        commandMessage.getOperator().sendGroupReply(commandMessage, "删除成功", false, Arcaea.instance);
                     }
                     return null;
                 }
                 String songId = ArcaeaHelper.getSongId(commandMessage.getArgs()[2], 0);
                 if (songId.equals("-1")) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
                     return null;
                 }
                 int page = (commandMessage.getArgs().length == 4 && StringUtils.isNumeric(commandMessage.getArgs()[3])) ? Integer.parseInt(commandMessage.getArgs()[3]) : 0;
@@ -303,29 +314,39 @@ public class CommandArcaea implements CommandExecutor {
                 sb.append("使用arcaea alias \"")
                         .append(commandMessage.getArgs()[2])
                         .append("\" <页数> 跳转到目标页数");
-                commandMessage.getOperator().sendMessage(commandMessage, sb.toString(), false, Arcaea.instance);
+                commandMessage.getOperator().sendGroupReply(commandMessage, sb.toString(), false, Arcaea.instance);
             }
             case "sinfo" -> {
                 if (updating) return null;
                 if (commandMessage.getArgs().length < 3) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "参数错误，应为arcaea sinfo <歌名>", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "参数错误，应为arcaea sinfo <歌名>", false, Arcaea.instance);
                     return null;
                 }
                 String songId = ArcaeaHelper.getSongId(commandMessage.getArgs()[2], 0);
                 if (songId.equals("-1")) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "没有叫这个名字的曲目呢，换个方式再试试吧", false, Arcaea.instance);
                     return null;
                 }
+                boolean recreate = false;
+                if (commandMessage.getNextCommand() != null) {
+                    if (commandMessage.getNextCommand().length > 1 &&
+                            commandMessage.getNextCommand()[1].equalsIgnoreCase("recreate")) recreate = true;
+                    else return null;
+                }
                 try {
-                    byte[] output = SongInfoGenerator.generate(Arcaea.instance.songInfo.get(songId));
-                    commandMessage.getOperator().sendMessage(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
+                    byte[] output = SongInfoGenerator.generate(Arcaea.instance.songInfo.get(songId), recreate);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "[CQ:image,file=base64://" + Base64.encodeBase64String(output) + "]", false, Arcaea.instance);
                 } catch (IOException e) {
-                    commandMessage.getOperator().sendMessage(commandMessage, "无法获取songInfo，这可能是内部错误，请告诉管理员", false, Arcaea.instance);
+                    commandMessage.getOperator().sendGroupReply(commandMessage, "无法获取songInfo，这可能是内部错误，请告诉管理员", false, Arcaea.instance);
                     Arcaea.instance.logger.error("Could not generate recent", e);
                 }
             }
+            case "recreate" -> {
+                return null;
+            }
             default -> {
-                commandMessage.getOperator().sendMessage(commandMessage, helpMessage, false, Arcaea.instance);
+                if (commandMessage.isChain()) return null;
+                commandMessage.getOperator().sendGroupReply(commandMessage, helpMessage, false, Arcaea.instance);
                 return null;
             }
         }
