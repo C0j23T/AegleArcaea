@@ -1,9 +1,10 @@
 # ArcaeaMod
 _Project Aegle基于ArcaeaUnlimitedAPI实现的Arcaea查分模块_  
 因为兴趣使然随便写的查分器（笑）
-## ~~注意：该项目已停止开发~~
+## 注意：该项目已停止开发
 ~~2023-04-27，由于ArcaeaUnlimitedAPI停止服务，该项目不得不无限期暂停开发，感谢AUA提供的免费查分API，也感谢一直以来大家对ArcaeaMod的支持！~~  
-2023-07-26，受到flicker的启发，该项目重新启动
+~~2023-07-26，受到flicker的启发，该项目重新启动~~
+2023-08-09，sb616
 ## Project Aegle - ArcaeaMod发展史
 #### 2022-08-25: 项目确立
 在b站上看到了一个mc服务端的arc查分插件，于是就想做一个查分bot
